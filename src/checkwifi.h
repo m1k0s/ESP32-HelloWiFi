@@ -3,7 +3,7 @@
 #include <WiFi.h>
 
 const uint32_t WIFI_STATUS_CHECK_TIMEOUT = 100;
-const uint32_t WIFI_STRENGTH_CHECK_TIMEOUT = 1000;
+const uint32_t WIFI_RSSI_CHECK_TIMEOUT = 1000;
 const uint32_t WIFI_CONNECT_TIMEOUT = 5000;
 const uint32_t WIFI_RETRY_TIMEOUT = 10000;
 
@@ -15,7 +15,7 @@ private:
 
 public:
     static void Init(const char* const ssid, const char* const passphrase, const char* const hostname = NULL);
-    static int8_t Strength(uint32_t deltaMillis);
+    static int8_t RSSI(uint32_t deltaMillis);
     static inline wl_status_t Status() { return status; }
     static inline IPAddress LocalIP() { return localIP; }
 
@@ -46,19 +46,21 @@ void WiFiConnection::Init(const char* const ssid, const char* const passphrase, 
     WiFi.begin(ssid, passphrase);
 }
 
-int8_t WiFiConnection::Strength(uint32_t deltaMillis)
 {
-    static uint32_t strengthCheckTimeout = WIFI_STRENGTH_CHECK_TIMEOUT;
-    static int8_t strength = -128;
 
-    strengthCheckTimeout += deltaMillis;
-    if (strengthCheckTimeout >= WIFI_STRENGTH_CHECK_TIMEOUT)
+int8_t WiFiConnection::RSSI(uint32_t deltaMillis)
+{
+    static uint32_t rssiCheckTimeout = WIFI_RSSI_CHECK_TIMEOUT;
+    static int8_t rssi = -128;
+
+    rssiCheckTimeout += deltaMillis;
+    if (rssiCheckTimeout >= WIFI_RSSI_CHECK_TIMEOUT)
     {
-        strength = WiFi.RSSI();
-        strengthCheckTimeout = 0;
+        rssiCheckTimeout = 0;
+        rssi = WiFi.RSSI();
     }
 
-    return strength;
+    return rssi;
 }
 
 void WiFiConnection::EventHandler(WiFiEvent_t event)

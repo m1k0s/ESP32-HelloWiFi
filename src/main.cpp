@@ -103,7 +103,7 @@ void drawConnectingAnim(uint8_t x, uint8_t y, uint32_t deltaMillis)
     }
 }
 
-void drawStrength(uint8_t x, uint8_t y, int8_t rssi)
+void drawWiFiStrength(uint8_t x, uint8_t y, int8_t rssi)
 {
     // 4 bitmaps (16x6); each row is one uint16_t, that way we dont need to worry about endianness.
     static const uint16_t BARS[4][6] = {
@@ -187,7 +187,7 @@ void updateWiFiStatus(uint32_t deltaMillis)
             connecting = false;
             drawConnectingAnim(0, 0, -1);
         }
-        drawStrength(0, 0, WiFiConnection::Strength(deltaMillis));
+        drawWiFiStrength(0, 0, WiFiConnection::RSSI(deltaMillis));
         {
             IPAddress localIP = WiFiConnection::LocalIP();
             g_OLED.setCursor(0, g_ScreenHeight);
