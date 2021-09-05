@@ -19,6 +19,7 @@ private:
 public:
     static void Init(const char* const ssid, const char* const passphrase, const char* const hostname = NULL);
     static int8_t RSSI(uint32_t deltaMillis);
+    static void Reconnect();
     static inline wl_status_t Status() { return status; }
     static inline IPAddress LocalIP() { return localIP; }
 
@@ -52,7 +53,12 @@ void WiFiConnection::Init(const char* const ssid, const char* const passphrase, 
     WiFi.begin(ssid, passphrase);
 }
 
+void WiFiConnection::Reconnect()
 {
+    Log("WiFi reconnecting\n");
+    WiFi.disconnect();
+    WiFi.reconnect();
+}
 
 int8_t WiFiConnection::RSSI(uint32_t deltaMillis)
 {
@@ -130,29 +136,12 @@ void WiFiConnection::EventHandler(WiFiEvent_t event)
 
     switch (event)
     {
-    case SYSTEM_EVENT_WIFI_READY:
-        break;
-    case SYSTEM_EVENT_SCAN_DONE:
-        break;
-    case SYSTEM_EVENT_STA_START:
-        break;
-    case SYSTEM_EVENT_STA_STOP:
-        break;
-    case SYSTEM_EVENT_STA_CONNECTED:
-        break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-        WiFi.disconnect();
-        WiFi.reconnect();
-        break;
-    case SYSTEM_EVENT_STA_AUTHMODE_CHANGE:
-        break;
     case SYSTEM_EVENT_STA_GOT_IP:
         localIP = WiFi.localIP();
         Log("WiFi IP: %d.%d.%d.%d\n", localIP[0], localIP[1], localIP[2], localIP[3]);
         break;
     case SYSTEM_EVENT_STA_LOST_IP:
         localIP = INADDR_NONE;
-        WiFi.reconnect();
         Log("WiFi IP: %d.%d.%d.%d\n", localIP[0], localIP[1], localIP[2], localIP[3]);
         break;
     default:

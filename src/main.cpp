@@ -176,15 +176,21 @@ void drawWiFiStrength(uint8_t x, uint8_t y, int8_t rssi)
 
 void updateWiFiStatus(uint32_t deltaMillis)
 {
-    static bool connecting = false;
+    static wl_status_t lastStatus = (wl_status_t)-1;
+    static bool connected = false;
+    static uint32_t connectTimeout = 0;
+    static uint32_t retryTimeout = 0;
 
-    switch (WiFiConnection::Status())
+    wl_status_t status = WiFiConnection::Status();
+    switch (status)
     {
     case WL_CONNECTED:
-        if (connecting)
+        if (lastStatus != WL_CONNECTED)
         {
-            // Was drawing the connecting anim and are now connected; reset any internal state.
-            connecting = false;
+            // Just connected; reset internal state.
+            connected = true;
+            connectTimeout = 0;
+            retryTimeout = 0;
             drawConnectingAnim(0, 0, -1);
         }
         drawWiFiStrength(0, 0, WiFiConnection::RSSI(deltaMillis));
@@ -195,9 +201,39 @@ void updateWiFiStatus(uint32_t deltaMillis)
         }
         break;
     default:
-        // Track the fact that we started drawing the connecting anim so we can reset this when connected.
-        connecting = true;
-        drawConnectingAnim(0, g_LineHeight, deltaMillis);
+        if(connected)
+        {
+            // If previously connected; wait the retry timeout.
+            retryTimeout += deltaMillis;
+            if (retryTimeout >= WIFI_RETRY_TIMEOUT)
+            {
+                retryTimeout = 0;
+                connected = false;
+                drawConnectingAnim(0, 0, -1);
+                WiFiConnection::Reconnect();
+            }
+        }
+        else
+        {
+            // Not previously connected; wait the connect timeout.
+            connectTimeout += deltaMillis;
+            if (connectTimeout >= WIFI_CONNECT_TIMEOUT)
+            {
+                connectTimeout = 0;
+                // Connection timeout; enter the retry state.
+                connected = true;
+            }
+        }
+        if (connectTimeout > 0)
+        {
+            drawConnectingAnim(0, g_LineHeight, deltaMillis);
+        }
+        else
+        {
+            g_OLED.drawStr(0, g_LineHeight, "???");
+        }
         break;
     }
+
+    lastStatus = status;
 }
