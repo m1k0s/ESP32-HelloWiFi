@@ -1,6 +1,9 @@
 #pragma once
 
 #include <WiFi.h>
+#include <stdarg.h>
+
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
 const uint32_t WIFI_STATUS_CHECK_TIMEOUT = 100;
 const uint32_t WIFI_RSSI_CHECK_TIMEOUT = 1000;
@@ -21,6 +24,9 @@ public:
 
 private:
     static void EventHandler(WiFiEvent_t event);
+
+private:
+    static void Log(const char* format, ...);
 };
 
 wl_status_t WiFiConnection::status = WL_IDLE_STATUS;
@@ -65,7 +71,62 @@ int8_t WiFiConnection::RSSI(uint32_t deltaMillis)
 
 void WiFiConnection::EventHandler(WiFiEvent_t event)
 {
+    static const char* EVENT_NAMES[] = {
+        "SYSTEM_EVENT_WIFI_READY",
+        "SYSTEM_EVENT_SCAN_DONE",
+        "SYSTEM_EVENT_STA_START",
+        "SYSTEM_EVENT_STA_STOP",
+        "SYSTEM_EVENT_STA_CONNECTED",
+        "SYSTEM_EVENT_STA_DISCONNECTED",
+        "SYSTEM_EVENT_STA_AUTHMODE_CHANGE",
+        "SYSTEM_EVENT_STA_GOT_IP",
+        "SYSTEM_EVENT_STA_LOST_IP",
+        "SYSTEM_EVENT_STA_WPS_ER_SUCCESS",
+        "SYSTEM_EVENT_STA_WPS_ER_FAILED",
+        "SYSTEM_EVENT_STA_WPS_ER_TIMEOUT",
+        "SYSTEM_EVENT_STA_WPS_ER_PIN",
+        "SYSTEM_EVENT_STA_WPS_ER_PBC_OVERLAP",
+        "SYSTEM_EVENT_AP_START",
+        "SYSTEM_EVENT_AP_STOP",
+        "SYSTEM_EVENT_AP_STACONNECTED",
+        "SYSTEM_EVENT_AP_STADISCONNECTED",
+        "SYSTEM_EVENT_AP_STAIPASSIGNED",
+        "SYSTEM_EVENT_AP_PROBEREQRECVED",
+        "SYSTEM_EVENT_GOT_IP6",
+        "SYSTEM_EVENT_ETH_START",
+        "SYSTEM_EVENT_ETH_STOP",
+        "SYSTEM_EVENT_ETH_CONNECTED",
+        "SYSTEM_EVENT_ETH_DISCONNECTED",
+        "SYSTEM_EVENT_ETH_GOT_IP"
+    };
+    if(event < ARRAY_SIZE(EVENT_NAMES))
+    {
+        Log("WiFi Event: %s\n", EVENT_NAMES[event]);
+    }
+    else
+    {
+        Log("WiFi Event: %d (unknown)\n", event);
+    }
+
     status = WiFi.status();
+
+    static const char* STATUS_NAMES[] = {
+        "WL_IDLE_STATUS",
+        "WL_NO_SSID_AVAIL",
+        "WL_SCAN_COMPLETED",
+        "WL_CONNECTED",
+        "WL_CONNECT_FAILED",
+        "WL_CONNECTION_LOST",
+        "WL_DISCONNECTED"
+    };
+    if(status < ARRAY_SIZE(STATUS_NAMES))
+    {
+        Log("WiFi Status: %s\n", STATUS_NAMES[status]);
+    }
+    else
+    {
+        Log("WiFi Status: %d (unknown)\n", status);
+    }
 
     switch (event)
     {
@@ -87,12 +148,27 @@ void WiFiConnection::EventHandler(WiFiEvent_t event)
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
         localIP = WiFi.localIP();
+        Log("WiFi IP: %d.%d.%d.%d\n", localIP[0], localIP[1], localIP[2], localIP[3]);
         break;
     case SYSTEM_EVENT_STA_LOST_IP:
         localIP = INADDR_NONE;
         WiFi.reconnect();
+        Log("WiFi IP: %d.%d.%d.%d\n", localIP[0], localIP[1], localIP[2], localIP[3]);
         break;
     default:
         break;
+    }
+}
+
+void WiFiConnection::Log(const char* format, ...)
+{
+    if(Serial.availableForWrite())
+    {
+        char buffer[256];
+        va_list args;
+        va_start(args, format);
+        vsnprintf(buffer, sizeof(buffer), format, args);
+        va_end(args);
+        Serial.print(buffer);
     }
 }

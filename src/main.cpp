@@ -6,8 +6,6 @@
 #define OLED_DATA 4
 #define OLED_RESET 16
 
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
-
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C g_OLED(U8G2_R0, OLED_RESET, OLED_CLOCK, OLED_DATA);
 uint32_t g_ScreenWidth;
 uint32_t g_ScreenHeight;
@@ -20,6 +18,8 @@ static const char HOSTNAME[] = "heltec";
 
 void setup()
 {
+    Serial.begin(9600);
+
     pinMode(LED_BUILTIN, OUTPUT);
 
     g_OLED.begin();
