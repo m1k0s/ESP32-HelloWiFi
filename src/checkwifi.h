@@ -5,10 +5,9 @@
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
-const uint32_t WIFI_STATUS_CHECK_TIMEOUT = 100;
 const uint32_t WIFI_RSSI_CHECK_TIMEOUT = 1000;
-const uint32_t WIFI_CONNECT_TIMEOUT = 5000;
-const uint32_t WIFI_RETRY_TIMEOUT = 10000;
+const uint32_t WIFI_CONNECT_TIMEOUT = 10000;
+const uint32_t WIFI_RETRY_TIMEOUT = 60000;
 
 class WiFiConnection
 {
