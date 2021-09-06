@@ -9,12 +9,18 @@
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C g_OLED(U8G2_R0, OLED_RESET, OLED_CLOCK, OLED_DATA);
 uint32_t g_ScreenWidth;
 uint32_t g_ScreenHeight;
+uint32_t g_ScreenCenterX;
+uint32_t g_ScreenCenterY;
 uint32_t g_LineHeight;
 uint32_t g_MaxCharWidth;
 
 static const char WIFI_SSID[] = "Test-Fi"; //<<< CHANGE ME!
 static const char WIFI_PASSPHRASE[] = "replaceme1234"; //<<< CHANGE ME!
 static const char HOSTNAME[] = "heltec";
+
+#define UTC_OFFSET_SECS 0
+#define DST_OFFSET_SECS 3600
+static const char NTP_SERVER[] = "uk.pool.ntp.org";
 
 void setup()
 {
@@ -27,6 +33,8 @@ void setup()
 
     g_ScreenWidth = g_OLED.getWidth();
     g_ScreenHeight = g_OLED.getHeight();
+    g_ScreenCenterX = g_ScreenWidth / 2;
+    g_ScreenCenterY = g_ScreenHeight / 2;
 
     g_OLED.setFont(u8g2_font_profont10_tf);
     g_LineHeight = g_OLED.getFontAscent() - g_OLED.getFontDescent();
@@ -53,6 +61,20 @@ void loop()
     {
         extern void updateWiFiStatus(uint32_t deltaMillis);
         updateWiFiStatus(deltaMillis);
+    }
+
+    if(WiFiConnection::Status() == WL_CONNECTED)
+    {
+        static const char* DAY_OF_WEEK[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+        static const char* MONTH[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+        tm ti;
+        getLocalTime(&ti);
+        timeval tv;
+        gettimeofday(&tv, NULL);
+        g_OLED.setCursor(g_ScreenCenterX - g_MaxCharWidth * 15 / 2, g_ScreenCenterY - g_LineHeight / 2);
+        g_OLED.printf("%3s %2d %3s %4d", DAY_OF_WEEK[ti.tm_wday], ti.tm_mday, MONTH[ti.tm_mon], ti.tm_year + 1900);
+        g_OLED.setCursor(g_ScreenCenterX - g_MaxCharWidth * 10 / 2, g_ScreenCenterY + g_LineHeight / 2);
+        g_OLED.printf("%02d:%02d:%02d.%u", ti.tm_hour, ti.tm_min, ti.tm_sec, (uint32_t)(tv.tv_usec / 100000));
     }
 
     g_OLED.setCursor(g_ScreenWidth - 3 * g_MaxCharWidth, g_LineHeight);
@@ -192,6 +214,9 @@ void updateWiFiStatus(uint32_t deltaMillis)
             connectTimeout = 0;
             retryTimeout = 0;
             drawConnectingAnim(0, 0, -1);
+
+            // Configure NTP.
+            configTime(UTC_OFFSET_SECS, DST_OFFSET_SECS, NTP_SERVER);
         }
         drawWiFiStrength(0, 0, WiFiConnection::RSSI(deltaMillis));
         {
