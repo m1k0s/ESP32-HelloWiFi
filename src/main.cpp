@@ -36,7 +36,7 @@ void setup()
     g_ScreenCenterX = g_ScreenWidth / 2;
     g_ScreenCenterY = g_ScreenHeight / 2;
 
-    g_OLED.setFont(u8g2_font_profont10_tf);
+    g_OLED.setFont(u8g2_font_profont12_tf);
     g_LineHeight = g_OLED.getFontAscent() - g_OLED.getFontDescent();
     g_MaxCharWidth = g_OLED.getMaxCharWidth();
 
