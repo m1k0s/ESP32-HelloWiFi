@@ -125,6 +125,26 @@ void drawConnectingAnim(uint8_t x, uint8_t y, uint32_t deltaMillis)
     }
 }
 
+void drawBitmap16(uint8_t x, uint8_t y, uint8_t cnt, uint8_t h, const uint16_t* rows)
+{
+    uint8_t w = cnt * 16;
+    for (; h > 0; --h, ++y, ++rows)
+    {
+        uint16_t row = *rows;
+        // Start at bit 15 (left-most) and shift the mask right for each pixel in the row.
+        uint16_t mask = 0x8000;
+        for (uint8_t _w = w, _x = x; _w > 0; --_w, ++_x, mask >>= 1)
+        {
+            if (row & mask)
+            {
+                // Yuk; how slow is this?! At least it deals with display rotations...
+                // !TODO! refactor if this becomes a problem.
+                g_OLED.drawPixel(_x, y);
+            }
+        }
+    }
+}
+
 void drawWiFiStrength(uint8_t x, uint8_t y, int8_t rssi)
 {
     // 4 bitmaps (16x6); each row is one uint16_t, that way we dont need to worry about endianness.
@@ -176,24 +196,8 @@ void drawWiFiStrength(uint8_t x, uint8_t y, int8_t rssi)
     const uint8_t DBM_PER_BAR = MAX_DBM / MAX_BARS;
     // RSSI -> number of bars we can visually distinguish.
     uint8_t bars = rssi / DBM_PER_BAR;
-    // Pick the appropriate bitmap.
-    const uint16_t *rows = BARS[bars];
-
-    for (uint8_t h = 6; h > 0; --h, ++y, ++rows)
-    {
-        uint16_t row = *rows;
-        // Start at bit 15 (left-most) and shift the mask right for each pixel in the row.
-        uint16_t mask = 0x8000;
-        for (uint8_t w = 16, _x = x; w > 0; --w, ++_x, mask >>= 1)
-        {
-            if (row & mask)
-            {
-                // Yuk; how slow is this?! At least it deals with display rotations...
-                // !TODO! refactor if this becomes a problem.
-                g_OLED.drawPixel(_x, y);
-            }
-        }
-    }
+    // Pick & draw the appropriate bitmap.
+    drawBitmap16(x, y, 1, 6, BARS[bars]);
 }
 
 void updateWiFiStatus(uint32_t deltaMillis)
