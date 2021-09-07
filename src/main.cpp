@@ -248,9 +248,11 @@ void updateWiFiStatus(uint32_t deltaMillis)
             connectTimeout += deltaMillis;
             if (connectTimeout >= WIFI_CONNECT_TIMEOUT)
             {
-                connectTimeout = 0;
                 // Connection timeout; enter the retry state.
                 connected = true;
+                connectTimeout = 0;
+                retryTimeout = 0;
+                drawConnectingAnim(0, 0, -1);
             }
         }
         if (connectTimeout > 0)
