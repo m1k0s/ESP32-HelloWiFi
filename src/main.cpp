@@ -71,9 +71,9 @@ void loop()
         getLocalTime(&ti);
         timeval tv;
         gettimeofday(&tv, NULL);
-        g_OLED.setCursor(g_ScreenCenterX - g_MaxCharWidth * 15 / 2, g_ScreenCenterY - g_LineHeight / 2);
+        g_OLED.setCursor(g_ScreenCenterX - g_MaxCharWidth * 15 / 2, g_ScreenCenterY - g_LineHeight / 4);
         g_OLED.printf("%3s %2d %3s %4d", DAY_OF_WEEK[ti.tm_wday], ti.tm_mday, MONTH[ti.tm_mon], ti.tm_year + 1900);
-        g_OLED.setCursor(g_ScreenCenterX - g_MaxCharWidth * 10 / 2, g_ScreenCenterY + g_LineHeight / 2);
+        g_OLED.setCursor(g_ScreenCenterX - g_MaxCharWidth * 10 / 2, g_ScreenCenterY + g_LineHeight * 5 / 4);
         g_OLED.printf("%02d:%02d:%02d.%u", ti.tm_hour, ti.tm_min, ti.tm_sec, (uint32_t)(tv.tv_usec / 100000));
     }
 
