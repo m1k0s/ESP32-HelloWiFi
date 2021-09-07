@@ -145,6 +145,20 @@ void drawBitmap16(uint8_t x, uint8_t y, uint8_t cnt, uint8_t h, const uint16_t* 
     }
 }
 
+void drawWiFiNoSignal(uint8_t x, uint8_t y)
+{
+    static const uint16_t NO_SIGNAL[7] = {
+        0b0000101110000000,
+        0b0000010001000000,
+        0b0000101000100000,
+        0b0000100100100000,
+        0b0000100010100000,
+        0b0000010001000000,
+        0b0000001110100000
+    };
+    drawBitmap16(x, y, 1, 7, NO_SIGNAL);
+}
+
 void drawWiFiStrength(uint8_t x, uint8_t y, int8_t rssi)
 {
     // 4 bitmaps (16x6); each row is one uint16_t, that way we dont need to worry about endianness.
@@ -261,7 +275,7 @@ void updateWiFiStatus(uint32_t deltaMillis)
         }
         else
         {
-            g_OLED.drawStr(0, g_LineHeight, "???");
+            drawWiFiNoSignal(0, 0);
         }
         break;
     }
