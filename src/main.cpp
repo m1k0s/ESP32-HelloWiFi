@@ -11,8 +11,10 @@ uint32_t g_ScreenWidth;
 uint32_t g_ScreenHeight;
 uint32_t g_ScreenCenterX;
 uint32_t g_ScreenCenterY;
-uint32_t g_LineHeight;
-uint32_t g_MaxCharWidth;
+uint32_t g_LineHeight12;
+uint32_t g_LineHeight22;
+uint32_t g_MaxCharWidth12;
+uint32_t g_MaxCharWidth22;
 
 static const char WIFI_SSID[] = "Test-Fi"; //<<< CHANGE ME!
 static const char WIFI_PASSPHRASE[] = "replaceme1234"; //<<< CHANGE ME!
@@ -36,9 +38,13 @@ void setup()
     g_ScreenCenterX = g_ScreenWidth / 2;
     g_ScreenCenterY = g_ScreenHeight / 2;
 
-    g_OLED.setFont(u8g2_font_profont12_tf);
-    g_LineHeight = g_OLED.getFontAscent() - g_OLED.getFontDescent();
-    g_MaxCharWidth = g_OLED.getMaxCharWidth();
+    g_OLED.setFont(u8g2_font_profont22_tn);
+    g_LineHeight22 = g_OLED.getFontAscent() - g_OLED.getFontDescent();
+    g_MaxCharWidth22 = g_OLED.getMaxCharWidth();
+
+    g_OLED.setFont(u8g2_font_profont12_tr);
+    g_LineHeight12 = g_OLED.getFontAscent() - g_OLED.getFontDescent();
+    g_MaxCharWidth12 = g_OLED.getMaxCharWidth();
 
     WiFiConnection::Init(WIFI_SSID, WIFI_PASSPHRASE, HOSTNAME);
 }
@@ -71,13 +77,17 @@ void loop()
         getLocalTime(&ti);
         timeval tv;
         gettimeofday(&tv, NULL);
-        g_OLED.setCursor(g_ScreenCenterX - g_MaxCharWidth * 15 / 2, g_ScreenCenterY - g_LineHeight / 4);
-        g_OLED.printf("%3s %2d %3s %4d", DAY_OF_WEEK[ti.tm_wday], ti.tm_mday, MONTH[ti.tm_mon], ti.tm_year + 1900);
-        g_OLED.setCursor(g_ScreenCenterX - g_MaxCharWidth * 10 / 2, g_ScreenCenterY + g_LineHeight * 5 / 4);
+
+        g_OLED.setFont(u8g2_font_profont22_tn);
+        g_OLED.setCursor(g_ScreenCenterX - g_MaxCharWidth22 * 10 / 2, g_ScreenCenterY + g_LineHeight22 / 2);
         g_OLED.printf("%02d:%02d:%02d.%u", ti.tm_hour, ti.tm_min, ti.tm_sec, (uint32_t)(tv.tv_usec / 100000));
+
+        g_OLED.setFont(u8g2_font_profont12_tr);
+        g_OLED.setCursor(g_ScreenCenterX - g_MaxCharWidth12 * 15 / 2, g_ScreenCenterY - g_LineHeight22 / 2);
+        g_OLED.printf("%3s %2d %3s %4d", DAY_OF_WEEK[ti.tm_wday], ti.tm_mday, MONTH[ti.tm_mon], ti.tm_year + 1900);
     }
 
-    g_OLED.setCursor(g_ScreenWidth - 3 * g_MaxCharWidth, g_LineHeight);
+    g_OLED.setCursor(g_ScreenWidth - 3 * g_MaxCharWidth12, g_LineHeight12);
     g_OLED.printf("%03.0f", fps);
 
     g_OLED.sendBuffer();
@@ -114,7 +124,7 @@ void drawConnectingAnim(uint8_t x, uint8_t y, uint32_t deltaMillis)
     connectingAnimTime = (connectingAnimTime + deltaMillis) % CONNECTING_ANIM_DURATION_MILLIS;
     int index = (int)(connectingAnimTime * ARRAY_SIZE(CONNECTING_ANIM) / (float)CONNECTING_ANIM_DURATION_MILLIS);
 
-    g_OLED.drawStr(0, g_LineHeight, CONNECTING_ANIM[index]);
+    g_OLED.drawStr(0, g_LineHeight12, CONNECTING_ANIM[index]);
 
     digitalWrite(LED_BUILTIN, ledState);
     ledMillis += deltaMillis;
@@ -271,7 +281,7 @@ void updateWiFiStatus(uint32_t deltaMillis)
         }
         if (connectTimeout > 0)
         {
-            drawConnectingAnim(0, g_LineHeight, deltaMillis);
+            drawConnectingAnim(0, g_LineHeight12, deltaMillis);
         }
         else
         {
