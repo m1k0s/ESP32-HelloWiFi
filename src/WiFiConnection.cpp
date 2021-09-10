@@ -1,34 +1,11 @@
-#pragma once
-
-#include <WiFi.h>
-#include <stdarg.h>
+#include "WiFiConnection.h"
+#include "Logger.h"
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
-const uint32_t WIFI_RSSI_CHECK_TIMEOUT = 1000;
-const uint32_t WIFI_CONNECT_TIMEOUT = 10000;
-const uint32_t WIFI_RETRY_TIMEOUT = 60000;
-
-class WiFiConnection
-{
-private:
-    static wl_status_t status;
-    static IPAddress localIP;
-
-public:
-    static void Init(const char* const ssid, const char* const passphrase, const char* const hostname = NULL);
-    static int8_t RSSI(uint32_t deltaMillis);
-    static void Reconnect();
-    static inline wl_status_t Status() { return status; }
-    static inline IPAddress LocalIP() { return localIP; }
-
-private:
-    static void EventHandler(WiFiEvent_t event);
-
-private:
-    static void Log(const char* format, ...);
-};
-
+const uint32_t WiFiConnection::RSSI_CHECK_TIMEOUT = 1000;
+const uint32_t WiFiConnection::CONNECT_TIMEOUT = 10000;
+const uint32_t WiFiConnection::RETRY_TIMEOUT = 60000;
 wl_status_t WiFiConnection::status = WL_IDLE_STATUS;
 IPAddress WiFiConnection::localIP = INADDR_NONE;
 
@@ -54,18 +31,18 @@ void WiFiConnection::Init(const char* const ssid, const char* const passphrase, 
 
 void WiFiConnection::Reconnect()
 {
-    Log("WiFi reconnecting\n");
+    Logger::Log("WiFi reconnecting\n");
     WiFi.disconnect();
     WiFi.reconnect();
 }
 
 int8_t WiFiConnection::RSSI(uint32_t deltaMillis)
 {
-    static uint32_t rssiCheckTimeout = WIFI_RSSI_CHECK_TIMEOUT;
+    static uint32_t rssiCheckTimeout = RSSI_CHECK_TIMEOUT;
     static int8_t rssi = -128;
 
     rssiCheckTimeout += deltaMillis;
-    if (rssiCheckTimeout >= WIFI_RSSI_CHECK_TIMEOUT)
+    if (rssiCheckTimeout >= RSSI_CHECK_TIMEOUT)
     {
         rssiCheckTimeout = 0;
         rssi = WiFi.RSSI();
@@ -106,11 +83,11 @@ void WiFiConnection::EventHandler(WiFiEvent_t event)
     };
     if(event < ARRAY_SIZE(EVENT_NAMES))
     {
-        Log("WiFi Event: %s\n", EVENT_NAMES[event]);
+        Logger::Log("WiFi Event: %s\n", EVENT_NAMES[event]);
     }
     else
     {
-        Log("WiFi Event: %d (unknown)\n", event);
+        Logger::Log("WiFi Event: %d (unknown)\n", event);
     }
 
     status = WiFi.status();
@@ -126,37 +103,24 @@ void WiFiConnection::EventHandler(WiFiEvent_t event)
     };
     if(status < ARRAY_SIZE(STATUS_NAMES))
     {
-        Log("WiFi Status: %s\n", STATUS_NAMES[status]);
+        Logger::Log("WiFi Status: %s\n", STATUS_NAMES[status]);
     }
     else
     {
-        Log("WiFi Status: %d (unknown)\n", status);
+        Logger::Log("WiFi Status: %d (unknown)\n", status);
     }
 
     switch (event)
     {
     case SYSTEM_EVENT_STA_GOT_IP:
         localIP = WiFi.localIP();
-        Log("WiFi IP: %d.%d.%d.%d\n", localIP[0], localIP[1], localIP[2], localIP[3]);
+        Logger::Log("WiFi IP: %d.%d.%d.%d\n", localIP[0], localIP[1], localIP[2], localIP[3]);
         break;
     case SYSTEM_EVENT_STA_LOST_IP:
         localIP = INADDR_NONE;
-        Log("WiFi IP: %d.%d.%d.%d\n", localIP[0], localIP[1], localIP[2], localIP[3]);
+        Logger::Log("WiFi IP: %d.%d.%d.%d\n", localIP[0], localIP[1], localIP[2], localIP[3]);
         break;
     default:
         break;
-    }
-}
-
-void WiFiConnection::Log(const char* format, ...)
-{
-    if(Serial.availableForWrite())
-    {
-        char buffer[256];
-        va_list args;
-        va_start(args, format);
-        vsnprintf(buffer, sizeof(buffer), format, args);
-        va_end(args);
-        Serial.print(buffer);
     }
 }
