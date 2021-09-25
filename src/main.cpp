@@ -8,6 +8,7 @@
 #define OLED_CLOCK 15
 #define OLED_DATA 4
 #define OLED_RESET 16
+#define POWER_DETECTION 37
 
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C g_OLED(U8G2_R0, OLED_RESET, OLED_CLOCK, OLED_DATA);
 uint32_t g_ScreenWidth;
@@ -31,6 +32,9 @@ void setup()
 {
     Logger::Init(9600);
     delay(1000);
+
+    adcAttachPin(13);
+    analogSetClockDiv(255); // 1338mS
 
     pinMode(LED_BUILTIN, OUTPUT);
 
@@ -86,6 +90,8 @@ void loop()
     }
 
     {
+        extern void updatePowerStatus(uint32_t deltaMillis);
+        updatePowerStatus(deltaMillis);
     }
 
     if (WiFiConnection::Status() == WL_CONNECTED)
@@ -296,6 +302,30 @@ void updateWiFiStatus(uint32_t deltaMillis)
     }
 
     lastStatus = status;
+}
+
+void updatePowerStatus(uint32_t deltaMillis)
+{
+    static float power = 0.0f;
+
+    const float MAX_POWER_MILLIS = 2250.0f;
+    float sample = (float)analogRead(POWER_DETECTION) / MAX_POWER_MILLIS;
+    if (sample > 1.0f)
+    {
+        sample = 1.0f;
+    }
+
+    const uint32_t POWER_AVERAGE_SAMPLE_COUNT = 10;
+    const float POWER_ONE_SAMPLE_WEIGHT = 1.0f / POWER_AVERAGE_SAMPLE_COUNT;
+    power = power * (1.0f - POWER_ONE_SAMPLE_WEIGHT) + sample * POWER_ONE_SAMPLE_WEIGHT;
+
+    const uint8_t X = 18;
+    const uint8_t Y = 0;
+    const uint8_t WIDTH = 16;
+    const uint8_t HEIGHT = 6;
+    g_OLED.drawFrame(X, Y, WIDTH, HEIGHT);
+    g_OLED.drawVLine(X + WIDTH, Y + 2, HEIGHT - 2 - 2);
+    g_OLED.drawBox(X + 1, Y + 1, (WIDTH - 2 + 0.5f) * power, HEIGHT - 2);
 }
 
 void updateTime(uint32_t deltaMillis)
