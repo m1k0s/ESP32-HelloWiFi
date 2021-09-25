@@ -53,6 +53,16 @@ void setup()
     WiFiConnection::Init(WIFI_SSID, WIFI_PASSPHRASE, HOSTNAME);
 }
 
+void drawPrintF(uint8_t x, uint8_t y, const char* format, ...)
+{
+    char buffer[256];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+    g_OLED.drawStr(x, y, buffer);
+}
+
 void loop()
 {
     static uint32_t lastMillis = 0;
@@ -84,8 +94,7 @@ void loop()
         updateTime(deltaMillis);
     }
 
-    g_OLED.setCursor(g_ScreenWidth - 3 * g_MaxCharWidth12, g_LineHeight12);
-    g_OLED.printf("%03.0f", fps);
+    drawPrintF(g_ScreenWidth - 3 * g_MaxCharWidth12, g_LineHeight12, "%03.0f", fps);
 
     g_OLED.sendBuffer();
 
@@ -246,8 +255,7 @@ void updateWiFiStatus(uint32_t deltaMillis)
         drawWiFiStrength(0, 0, WiFiConnection::RSSI(deltaMillis));
         {
             IPAddress localIP = WiFiConnection::LocalIP();
-            g_OLED.setCursor(0, g_ScreenHeight);
-            g_OLED.printf("%u.%u.%u.%u", localIP[0], localIP[1], localIP[2], localIP[3]);
+            drawPrintF(0, g_ScreenHeight, "%u.%u.%u.%u", localIP[0], localIP[1], localIP[2], localIP[3]);
         }
         break;
     default:
@@ -300,10 +308,24 @@ void updateTime(uint32_t deltaMillis)
     gettimeofday(&tv, NULL);
 
     g_OLED.setFont(u8g2_font_profont22_tn);
-    g_OLED.setCursor(g_ScreenCenterX - g_MaxCharWidth22 * 10 / 2, g_ScreenCenterY + g_LineHeight22 / 2);
-    g_OLED.printf("%02d:%02d:%02d.%u", ti.tm_hour, ti.tm_min, ti.tm_sec, (uint32_t)(tv.tv_usec / 100000));
+    drawPrintF(
+        g_ScreenCenterX - g_MaxCharWidth22 * 10 / 2,
+        g_ScreenCenterY + g_LineHeight22 / 2,
+        "%02d:%02d:%02d.%u",
+        ti.tm_hour,
+        ti.tm_min,
+        ti.tm_sec,
+        (uint32_t)(tv.tv_usec / 100000)
+    );
 
     g_OLED.setFont(u8g2_font_profont12_tr);
-    g_OLED.setCursor(g_ScreenCenterX - g_MaxCharWidth12 * 15 / 2, g_ScreenCenterY - g_LineHeight22 / 2);
-    g_OLED.printf("%3s %2d %3s %4d", DAY_OF_WEEK[ti.tm_wday], ti.tm_mday, MONTH[ti.tm_mon], ti.tm_year + 1900);
+    drawPrintF(
+        g_ScreenCenterX - g_MaxCharWidth12 * 15 / 2,
+        g_ScreenCenterY - g_LineHeight22 / 2,
+        "%3s %2d %3s %4d",
+        DAY_OF_WEEK[ti.tm_wday],
+        ti.tm_mday,
+        MONTH[ti.tm_mon],
+        ti.tm_year + 1900
+    );
 }
