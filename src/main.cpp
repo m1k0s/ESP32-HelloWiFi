@@ -98,12 +98,12 @@ void loop()
 
     g_OLED.sendBuffer();
 
-    // Cap @100ms per frame.
+    const uint32_t FRAME_TIME_CAP_MILLIS = 50;
     // Work out how long everything up till now took in this frame and delay appropriately
-    int32_t frameMillis = millis() - thisMillis;
-    if (frameMillis < 100)
+    uint32_t frameMillis = millis() - thisMillis;
+    if (frameMillis < FRAME_TIME_CAP_MILLIS)
     {
-        delay(100 - frameMillis);
+        delay(FRAME_TIME_CAP_MILLIS - frameMillis);
     }
 }
 
