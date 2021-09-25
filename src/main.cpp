@@ -32,6 +32,22 @@ void setup()
 {
     Logger::Init(9600);
     delay(1000);
+    Logger::Log("HeapSize: %u\n", ESP.getHeapSize());
+    Logger::Log("FreeHeap: %u\n", ESP.getFreeHeap());
+    Logger::Log("MinFreeHeap: %u\n", ESP.getMinFreeHeap());
+    Logger::Log("MaxAllocHeap: %u\n", ESP.getMaxAllocHeap());
+    Logger::Log("ChipRevision: %u\n", ESP.getChipRevision());
+    Logger::Log("ChipModel: %s\n", ESP.getChipModel());
+    Logger::Log("ChipCores: %u\n", ESP.getChipCores());
+    Logger::Log("CpuFreqMHz: %u\n", ESP.getCpuFreqMHz());
+    Logger::Log("SdkVersion: %s\n", ESP.getSdkVersion());
+    Logger::Log("FlashChipSize: %u\n", ESP.getFlashChipSize());
+    Logger::Log("FlashChipSpeed: %u\n", ESP.getFlashChipSpeed());
+    Logger::Log("FlashChipMode: %s\n", ESP.getFlashChipMode());
+    Logger::Log("SketchSize: %u\n", ESP.getSketchSize());
+    Logger::Log("SketchMD5: %s\n", ESP.getSketchMD5().c_str());
+    Logger::Log("FreeSketchSpace: %u\n", ESP.getFreeSketchSpace());
+    Logger::Log("EfuseMac: %016lx\n", ESP.getEfuseMac());
 
     adcAttachPin(13);
     analogSetClockDiv(255); // 1338mS
