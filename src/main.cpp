@@ -342,6 +342,8 @@ void updatePowerStatus(uint32_t deltaMillis)
     g_OLED.drawFrame(X, Y, WIDTH, HEIGHT);
     g_OLED.drawVLine(X + WIDTH, Y + 2, HEIGHT - 2 - 2);
     g_OLED.drawBox(X + 1, Y + 1, (WIDTH - 2 + 0.5f) * power, HEIGHT - 2);
+
+    drawPrintF(g_ScreenWidth - 4 * g_MaxCharWidth12, g_ScreenHeight, "%3.0f%%", sample * 100.0f);
 }
 
 void updateTime(uint32_t deltaMillis)
