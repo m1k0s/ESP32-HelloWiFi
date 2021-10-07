@@ -324,8 +324,8 @@ void updatePowerStatus(uint32_t deltaMillis)
 {
     static float power = 0.0f;
 
-    const float MAX_POWER = 2250.0f;
-    const float MIN_POWER = 1750.0f;
+    const float MAX_POWER = 2480.0f;
+    const float MIN_POWER = 2200.0f;
     uint16_t sampleRaw = analogRead(POWER_DETECTION);
     float sample = ((float)sampleRaw - MIN_POWER) / (MAX_POWER - MIN_POWER);
     if (sample < 0.0f) sample = 0.0f; else if (sample > 1.0f) sample = 1.0f;
