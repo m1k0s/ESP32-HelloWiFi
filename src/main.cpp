@@ -1,25 +1,21 @@
 #include <Arduino.h>
-#include <U8g2lib.h>
 #include "LedBuiltin.h"
+#include "Display.h"
 #include "WiFiConnection.h"
 #include "Logger.h"
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
-#define OLED_CLOCK 15
-#define OLED_DATA 4
-#define OLED_RESET 16
 #define POWER_DETECTION 37
 
-U8G2_SSD1306_128X64_NONAME_F_HW_I2C g_OLED(U8G2_R0, OLED_RESET, OLED_CLOCK, OLED_DATA);
+Display g_Display = Display();
+
 uint32_t g_ScreenWidth;
 uint32_t g_ScreenHeight;
 uint32_t g_ScreenCenterX;
 uint32_t g_ScreenCenterY;
-uint32_t g_LineHeight12;
-uint32_t g_LineHeight22;
-uint32_t g_MaxCharWidth12;
-uint32_t g_MaxCharWidth22;
+uint32_t g_LineHeight;
+uint32_t g_MaxCharWidth;
 
 static const char WIFI_SSID[] = "Test-Fi"; //<<< CHANGE ME!
 static const char WIFI_PASSPHRASE[] = "replaceme1234"; //<<< CHANGE ME!
@@ -55,33 +51,17 @@ void setup()
 
     LedBuiltin::Init();
 
-    g_OLED.begin();
-    g_OLED.clear();
+    g_Display.Init();
 
-    g_ScreenWidth = g_OLED.getWidth();
-    g_ScreenHeight = g_OLED.getHeight();
+    g_ScreenWidth = g_Display.Width();
+    g_ScreenHeight = g_Display.Height();
     g_ScreenCenterX = g_ScreenWidth / 2;
     g_ScreenCenterY = g_ScreenHeight / 2;
 
-    g_OLED.setFont(u8g2_font_profont22_tn);
-    g_LineHeight22 = g_OLED.getFontAscent() - g_OLED.getFontDescent();
-    g_MaxCharWidth22 = g_OLED.getMaxCharWidth();
-
-    g_OLED.setFont(u8g2_font_profont12_tr);
-    g_LineHeight12 = g_OLED.getFontAscent() - g_OLED.getFontDescent();
-    g_MaxCharWidth12 = g_OLED.getMaxCharWidth();
+    g_LineHeight = g_Display.FontHeight();
+    g_MaxCharWidth = g_Display.FontMaxCharWidth();
 
     WiFiConnection::Init(WIFI_SSID, WIFI_PASSPHRASE, HOSTNAME);
-}
-
-void drawPrintF(uint8_t x, uint8_t y, const char* format, ...)
-{
-    char buffer[256];
-    va_list args;
-    va_start(args, format);
-    vsnprintf(buffer, sizeof(buffer), format, args);
-    va_end(args);
-    g_OLED.drawStr(x, y, buffer);
 }
 
 void loop()
@@ -99,7 +79,7 @@ void loop()
         fps = fps * (1.0f - FPS_ONE_FRAME_WEIGHT) + (1000.0f / deltaMillis) * FPS_ONE_FRAME_WEIGHT;
     }
 
-    g_OLED.clearBuffer();
+    g_Display.Clear();
 
     {
         extern void updateWiFiStatus(uint32_t deltaMillis);
@@ -117,9 +97,9 @@ void loop()
         updateTime(deltaMillis);
     }
 
-    drawPrintF(g_ScreenWidth - 3 * g_MaxCharWidth12, g_LineHeight12, "%03.0f", fps);
+    g_Display.PrintF(g_ScreenWidth - 3 * g_MaxCharWidth, 0, "%03.0f", fps);
 
-    g_OLED.sendBuffer();
+    g_Display.SendBuffer();
 
     const uint32_t FRAME_TIME_CAP_MILLIS = 50;
     // Work out how long everything up till now took in this frame and delay appropriately
@@ -153,7 +133,7 @@ void drawConnectingAnim(uint8_t x, uint8_t y, uint32_t deltaMillis)
     connectingAnimTime = (connectingAnimTime + deltaMillis) % CONNECTING_ANIM_DURATION_MILLIS;
     int index = (int)(connectingAnimTime * ARRAY_SIZE(CONNECTING_ANIM) / (float)CONNECTING_ANIM_DURATION_MILLIS);
 
-    g_OLED.drawStr(0, g_LineHeight12, CONNECTING_ANIM[index]);
+    g_Display.PrintF(0, g_LineHeight, CONNECTING_ANIM[index]);
 
     LedBuiltin::Set(ledHigh);
     ledMillis += deltaMillis;
@@ -178,7 +158,7 @@ void drawBitmap16(uint8_t x, uint8_t y, uint8_t cnt, uint8_t h, const uint16_t *
             {
                 // Yuk; how slow is this?! At least it deals with display rotations...
                 // !TODO! refactor if this becomes a problem.
-                g_OLED.drawPixel(_x, y);
+                g_Display.DrawPixel(_x, y);
             }
         }
     }
@@ -278,7 +258,7 @@ void updateWiFiStatus(uint32_t deltaMillis)
         drawWiFiStrength(0, 0, WiFiConnection::RSSI(deltaMillis));
         {
             IPAddress localIP = WiFiConnection::LocalIP();
-            drawPrintF(0, g_ScreenHeight, "%u.%u.%u.%u", localIP[0], localIP[1], localIP[2], localIP[3]);
+            g_Display.PrintF(0, g_ScreenHeight, "%u.%u.%u.%u", localIP[0], localIP[1], localIP[2], localIP[3]);
         }
         break;
     default:
@@ -309,7 +289,7 @@ void updateWiFiStatus(uint32_t deltaMillis)
         }
         if (connectTimeout > 0)
         {
-            drawConnectingAnim(0, g_LineHeight12, deltaMillis);
+            drawConnectingAnim(0, g_LineHeight, deltaMillis);
         }
         else
         {
@@ -339,11 +319,11 @@ void updatePowerStatus(uint32_t deltaMillis)
     const uint8_t Y = 0;
     const uint8_t WIDTH = 16;
     const uint8_t HEIGHT = 6;
-    g_OLED.drawFrame(X, Y, WIDTH, HEIGHT);
-    g_OLED.drawVLine(X + WIDTH, Y + 2, HEIGHT - 2 - 2);
-    g_OLED.drawBox(X + 1, Y + 1, (WIDTH - 2 + 0.5f) * power, HEIGHT - 2);
+    g_Display.DrawRect(X, Y, WIDTH, HEIGHT);
+    g_Display.DrawLine(X + WIDTH, Y + 2, X + WIDTH, HEIGHT - 2 - 2);
+    g_Display.FillRect(X + 1, Y + 1, (WIDTH - 2 + 0.5f) * power, HEIGHT - 2);
 
-    drawPrintF(g_ScreenWidth - 4 * g_MaxCharWidth12, g_ScreenHeight, "%3.0f%%", sample * 100.0f);
+    g_Display.PrintF(g_ScreenWidth - 4 * g_MaxCharWidth, g_ScreenHeight, "%3.0f%%", sample * 100.0f);
 }
 
 void updateTime(uint32_t deltaMillis)
@@ -355,10 +335,9 @@ void updateTime(uint32_t deltaMillis)
     timeval tv;
     gettimeofday(&tv, NULL);
 
-    g_OLED.setFont(u8g2_font_profont22_tn);
-    drawPrintF(
-        g_ScreenCenterX - g_MaxCharWidth22 * 10 / 2,
-        g_ScreenCenterY + g_LineHeight22 / 2,
+    g_Display.PrintF(
+        g_ScreenCenterX - g_MaxCharWidth * 10 / 2,
+        g_ScreenCenterY + g_LineHeight / 2,
         "%02d:%02d:%02d.%u",
         ti.tm_hour,
         ti.tm_min,
@@ -366,10 +345,9 @@ void updateTime(uint32_t deltaMillis)
         (uint32_t)(tv.tv_usec / 100000)
     );
 
-    g_OLED.setFont(u8g2_font_profont12_tr);
-    drawPrintF(
-        g_ScreenCenterX - g_MaxCharWidth12 * 15 / 2,
-        g_ScreenCenterY - g_LineHeight22 / 2,
+    g_Display.PrintF(
+        g_ScreenCenterX - g_MaxCharWidth * 15 / 2,
+        g_ScreenCenterY - g_LineHeight / 2,
         "%3s %2d %3s %4d",
         DAY_OF_WEEK[ti.tm_wday],
         ti.tm_mday,
