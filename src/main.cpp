@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <U8g2lib.h>
+#include "LedBuiltin.h"
 #include "WiFiConnection.h"
 #include "Logger.h"
 
@@ -52,7 +53,7 @@ void setup()
     adcAttachPin(13);
     analogSetClockDiv(255); // 1338mS
 
-    pinMode(LED_BUILTIN, OUTPUT);
+    LedBuiltin::Init();
 
     g_OLED.begin();
     g_OLED.clear();
@@ -136,16 +137,16 @@ void drawConnectingAnim(uint8_t x, uint8_t y, uint32_t deltaMillis)
     static const char *const CONNECTING_ANIM[] = {".  ", ".. ", "...", "   "};
 
     const uint32_t BLINK_DURATION_MILLIS = CONNECTING_ANIM_DURATION_MILLIS / ARRAY_SIZE(CONNECTING_ANIM);
-    static bool ledState = HIGH;
+    static bool ledHigh = true;
     static uint32_t ledMillis = 0;
 
     if (deltaMillis == -1)
     {
         // Reset internal state & return.
         connectingAnimTime = 0;
-        ledState = LOW;
+        ledHigh = false;
         ledMillis = 0;
-        digitalWrite(LED_BUILTIN, ledState);
+        LedBuiltin::Set(ledHigh);
         return;
     }
 
@@ -154,11 +155,11 @@ void drawConnectingAnim(uint8_t x, uint8_t y, uint32_t deltaMillis)
 
     g_OLED.drawStr(0, g_LineHeight12, CONNECTING_ANIM[index]);
 
-    digitalWrite(LED_BUILTIN, ledState);
+    LedBuiltin::Set(ledHigh);
     ledMillis += deltaMillis;
     if (ledMillis >= BLINK_DURATION_MILLIS)
     {
-        ledState = !ledState;
+        ledHigh = !ledHigh;
         ledMillis -= BLINK_DURATION_MILLIS;
     }
 }
